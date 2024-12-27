@@ -4,55 +4,107 @@
 #include <conio.h>
 #include <ctype.h>
 #include <windows.h>
-int n;
+int tile[15][15] = {0};
+int moveUpdate = 0;
+int score = 1;
 
-
+int snake_i, snake_j;
+int apple_i, apple_j;
 
 void resetGrid();
 void moveSnake();
 void apple();
-void snakeLogic();
+int snakeLogic();
 void clearGrid();
 void putSnake();
+void printGrid();
+void setColor();
 
-void snakeLogic(int grid[n][n], int n, int move)    //move: 1 = up, 2 = right, 3 = down, 4 = left
+void setColor(int color)
 {
-    
+    SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), color);
 }
 
-void moveSnake(int grid[n][n], int n)
+
+int snakeLogic(int n)    //move: 1 = up, 2 = right, 3 = down, 4 = left
+{
+    switch (moveUpdate)
+    {
+        case 1: // Move up
+            snake_i--;
+            break;
+        case 2: // Move right
+            snake_j++;
+            break;
+        case 3: // Move down
+            snake_i++;
+            break;
+        case 4: // Move left
+            snake_j--;
+            break;
+    }
+
+    if (tile[snake_i][snake_j] > 0)
+        return -1;
+
+    tile[snake_i][snake_j] = score;
+
+
+    if (snake_i == apple_i && snake_j == apple_j)
+    {
+        ++score;
+        return 1;
+    }
+
+
+    if (snake_i == 0 || snake_i == n-1 || snake_j == 0 || snake_j == n-1)
+        return -1;
+    
+    return 0;
+}
+
+
+void moveSnake(int n)
 {
     if (kbhit())
     {
         switch (tolower(getch()))
         {
             case 'w':
-                snakeLogic(grid, n, 1);
+                if (moveUpdate == 3)
+                    break;
+                moveUpdate = 1;
                 break;
 
             case 'd':
-                snakeLogic(grid, n, 2);
+                if (moveUpdate == 4)
+                    break;
+                moveUpdate = 2; 
                 break;
 
             case 's':
-                snakeLogic(grid, n, 3);
+                if (moveUpdate == 1)
+                    break;
+                moveUpdate = 3;
                 break;
             
             case 'a':
-                snakeLogic(grid, n, 4);
+                if (moveUpdate == 2)
+                    break;
+                moveUpdate = 4;
                 break;
         }
     }
 }
 
 
-void resetGrid(int grid[n][n], int n)
+void resetGrid(int n)
 {
     for (int i = 0; i < n; i++)
     {
         for (int j = 0; j < n; j++)
         {
-            grid[i][j] = 0;
+            tile[i][j] = 0;
         }
     }
 }
@@ -60,45 +112,181 @@ void resetGrid(int grid[n][n], int n)
 
 void putSnake(int n)
 {
-    srand(time(0));
+    int i, j;
+    do
+    {
+        i = (rand() % (n-2));
+        j = (rand() % (n-2));
+    } while (i == 1 || i == n-2 || i == 0 || i == n-1 || j == 1 || j == n-2 || j == 0 || j == n-1);     //snake cannot be on any extremities of grid
 
-    int i = rand() % n;
-    int j = rand() % n;
+    tile[i][j] = 1;
+
+    snake_i = i;
+    snake_j = j;
 }
 
 
-void printGrid(int grid[n][n], int n)
+void printGrid(int n)
 {
+    for (int i = 0; i < n; i++)
+    {
+        for (int j = 0; j < n; j++)
+        {
+            // Frame/border
+            if (i == 0 || i == n-1)
+            {
+                if (j == n-1)
+                {
+                    printf("-", tile[i][j]);
+                    continue;
+                }
+                printf("--", tile[i][j]);
+                continue;
+            }
+            else if (j == 0 || j == n-1)
+            {
+                printf("| ", tile[i][j]);
+                continue;
+            }
+
+            // UI
+            if (tile[i][j] == -1)
+            {
+                setColor(4);
+                printf("* ");
+            }
+            else if (i == snake_i && j == snake_j)
+            {
+                setColor(2);
+                switch (moveUpdate)
+                {
+                    case 0:
+                        printf("O ");
+                        break;
+                    case 1:
+                        printf("^ ");
+                        break;
+
+                    case 2:
+                        printf("> ");
+                        break;
+
+                    case 3:
+                        printf("v ");
+                        break;
+
+                    case 4:
+                        printf("< ");
+                        break;
+                }
+            }
+            else if (tile[i][j] < score && tile[i][j] > 0)
+            {
+                setColor(2);
+                printf("o ");
+            }
+            else if (tile[i][j] == 0)
+            {
+                setColor(7);
+                printf("  ");
+            }
+
+            setColor(7);    //Reset color
+
+            if (tile[i][j] > 0)
+                --tile[i][j];       //Mimick snake's tail
+        }
+        printf("\n");
+    }
+}
+
+
+void gridLogic(int n)
+{
+    system("cls");
+    moveUpdate = 0;
+    score = 1;
     putSnake(n);
+    apple(n);
+    printGrid(n);
+    printf("Press (w/a/s/d) to start.\n");
+    while (moveUpdate == 0)
+    {
+        moveSnake(n);
+    }
+    system("cls");
     while (1)
     {
-        moveSnake(grid, n);
-        for (int i = 0; i < n; i++)
+        moveSnake(n);
+        if (snake_i == apple_i && snake_j == apple_j)
+            apple(n);
+
+        int ret = snakeLogic(n);
+
+        if (ret == 1)
         {
-            for (int j = 0; j < n; j++)
+            for (int i = 0; i < n; i++)
             {
-                printf("%d ", grid[i][j]);
+                for (int j = 0; j < n; j++)
+                {
+                    if (tile[i][j] > 0)
+                        tile[i][j]++;
+                }
             }
-            printf("\n");
         }
-        Sleep(500);
+        else if (ret == -1)
+        {
+            break;
+        }
+        
+        
+
+        printGrid(n);
+        printf("Score: %d\n", score-1);
+        Sleep(200);
         system("cls");
     }
+
+    printf("You died!\n");
+}
+
+
+void apple(int n)
+{
+    int i, j;
+    do
+    {
+        i = (rand() % (n-2));
+        j = (rand() % (n-2));
+    } while (i == 0 || i == n-1 || j == 0 || j == n-1 || tile[i][j]);     //apple can be on grid's edges
+
+    tile[i][j] = -1;
+
+    apple_i = i;
+    apple_j = j;
 }
 
 
 int main()
 {
-    int n = 5;
-    int grid[n][n];
+    srand(time(0));
+
+    int n = 15;
+
+    
     char request;
     do
     {
-        resetGrid(grid, n);
+        resetGrid(n);
 
-        printGrid(grid, n);
+        gridLogic(n);
 
-    } while (request == 'y' || request == 'Y');
+        printf("Do you want to play again? (y/n)\n");
+
+        request = getch();
+        if (tolower(request) == 'n')
+            break;
+    } while (tolower(request) == 'y');
     return 0;
 }
 
