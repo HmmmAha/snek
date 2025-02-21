@@ -273,6 +273,7 @@ int main()
 
     int n = 15;
 
+    printf("this is just a test\n");
     
     char request;
     do
