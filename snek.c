@@ -11,14 +11,6 @@ int score = 1;
 int snake_i, snake_j;
 int apple_i, apple_j;
 
-void resetGrid();
-void moveSnake();
-void apple();
-int snakeLogic();
-void clearGrid();
-void putSnake();
-void printGrid();
-void setColor();
 
 void setColor(int color)
 {
@@ -201,6 +193,22 @@ void printGrid(int n)
 }
 
 
+void apple(int n)
+{
+    int i, j;
+    do
+    {
+        i = (rand() % (n-2));
+        j = (rand() % (n-2));
+    } while (i == 0 || i == n-1 || j == 0 || j == n-1 || tile[i][j]);     //apple can be on grid's edges
+
+    tile[i][j] = -1;
+
+    apple_i = i;
+    apple_j = j;
+}
+
+
 void gridLogic(int n)
 {
     system("cls");
@@ -250,23 +258,6 @@ void gridLogic(int n)
     printf("You died!\n");
 }
 
-
-void apple(int n)
-{
-    int i, j;
-    do
-    {
-        i = (rand() % (n-2));
-        j = (rand() % (n-2));
-    } while (i == 0 || i == n-1 || j == 0 || j == n-1 || tile[i][j]);     //apple can be on grid's edges
-
-    tile[i][j] = -1;
-
-    apple_i = i;
-    apple_j = j;
-}
-
-
 int main()
 {
     srand(time(0));
@@ -290,6 +281,3 @@ int main()
     } while (tolower(request) == 'y');
     return 0;
 }
-
-
-
